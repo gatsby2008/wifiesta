@@ -3,6 +3,7 @@ HELP.md
 /build/
 Database.mv.db
 Database.trace.db
+Testdb.mv.db
 
 !.mvn/wrapper/maven-wrapper.jar
 
