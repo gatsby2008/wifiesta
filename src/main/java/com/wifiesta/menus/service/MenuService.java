@@ -6,6 +6,7 @@ import com.wifiesta.menus.domain.Menu;
 import com.wifiesta.menus.repository.ItemRepository;
 import com.wifiesta.menus.repository.MenuRepository;
 import com.wifiesta.menus.resource.MenuDTO;
+import com.wifiesta.menus.resource.MenuSummaryDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,5 +111,62 @@ public class MenuService {
         }
         return ((menu.isActive()?1:0) + menu.getSubmenus().stream().mapToInt(m->getActiveSubmenusHelper(m)).sum());
 
+    }
+
+    public MenuSummaryDTO getMenuSummary(Long menuId) {
+        Menu menu = this.getMenu(menuId);
+        if (menu == null) {
+            return null;
+        }
+        return buildSummary(menu);
+    }
+
+    /**
+     * Summarizes a menu tree. The menu's own items always count; submenus count only
+     * while active, and an inactive submenu hides its whole subtree. The total is only
+     * computed when every counted item shares one currency (null is a value of its own).
+     */
+    public MenuSummaryDTO buildSummary(Menu menu) {
+        List<Item> countedItems = new ArrayList<>(itemsOf(menu));
+        int activeSubmenus = collectActiveSubmenus(menu, countedItems);
+
+        Set<String> currencies = countedItems.stream()
+                .map(Item::getCurrency)
+                .collect(Collectors.toSet());
+
+        Double totalAmount = null;
+        String currency = null;
+        if (currencies.size() <= 1) {
+            totalAmount = countedItems.stream().mapToDouble(Item::getPrice).sum();
+            currency = currencies.isEmpty() ? null : currencies.iterator().next();
+        }
+
+        return MenuSummaryDTO.builder()
+                .menuId(menu.getId())
+                .description(menu.getDescription())
+                .totalAmount(totalAmount)
+                .currency(currency)
+                .activeSubmenus(activeSubmenus)
+                .build();
+    }
+
+    private int collectActiveSubmenus(Menu menu, List<Item> countedItems) {
+        int count = 0;
+        for (Menu submenu : submenusOf(menu)) {
+            if (submenu != null && submenu.isActive()) {
+                count++;
+                countedItems.addAll(itemsOf(submenu));
+                count += collectActiveSubmenus(submenu, countedItems);
+            }
+        }
+        return count;
+    }
+
+    private static List<Item> itemsOf(Menu menu) {
+        return menu.getItems() == null ? Collections.emptyList() : menu.getItems();
+    }
+
+    private static List<Menu> submenusOf(Menu menu) {
+        return menu.getSubmenus() == null ? Collections.emptyList() : menu.getSubmenus();
     }
 }

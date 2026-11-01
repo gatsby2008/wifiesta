@@ -75,4 +75,37 @@ class MenuControllerTest extends Specification {
         1004   || NOT_FOUND
 
     }
+
+    // spec: B1, B2, B3, B7
+    def "Get the summary of menu #menuId through /api/menus/id/summary"() {
+        given: "A set of menus is loaded"
+
+        when: "Get the menu summary through the rest service"
+        def entity = client.getForEntity("/api/menus/$menuId/summary", Map)
+
+        then: "The status code and the aggregates should be correct"
+        entity.statusCode == OK
+        entity.body.menuId == menuId
+        entity.body.description == "Menu-$menuId".toString()
+        entity.body.totalAmount == totalAmount
+        entity.body.currency == null
+        entity.body.activeSubmenus == activeSubmenus
+
+        where: "Menu id is... total amount is... active submenus are..."
+        menuId || totalAmount || activeSubmenus
+        1      || 497.0       || 3
+        2      || 100.0       || 0
+        3      || 250.0       || 1
+        4      || 150.0       || 0
+    }
+
+    // spec: B4
+    def "Get the summary of an unknown menu returns NOT_FOUND"() {
+        when: "Get the summary of a menu that does not exist"
+        def entity = client.getForEntity("/api/menus/1004/summary", String)
+
+        then: "The status code should be NOT_FOUND with no body"
+        entity.statusCode == NOT_FOUND
+        entity.body == null
+    }
 }

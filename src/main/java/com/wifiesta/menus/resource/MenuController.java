@@ -46,6 +46,16 @@ public class MenuController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
+    @GetMapping(value = "/menus/{id}/summary")
+    public ResponseEntity<MenuSummaryDTO> getMenuSummary(@PathVariable("id") Long id) {
+        long millis_startTime = System.currentTimeMillis();
+        MenuSummaryDTO summary = menuService.getMenuSummary(id);
+        long millis_endTime = System.currentTimeMillis();
+        log.info("Time taken in milli seconds: " + (millis_endTime - millis_startTime));
+        if (summary != null) return ResponseEntity.status(HttpStatus.OK).body(summary);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+    }
+
     @GetMapping(value = "/menus/{id}/items")
     public ResponseEntity<Map<?, List<Item>>> getItemsForMenu(@PathVariable("id") Long id,
                                                               @RequestParam(value = "groupBy", required = true)
