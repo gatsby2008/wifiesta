@@ -32,3 +32,5 @@ Testdb.mv.db
 
 ### VS Code ###
 .vscode/
+# SDD pipeline state (transient)
+.specwork/
